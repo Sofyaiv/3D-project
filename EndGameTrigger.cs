@@ -3,60 +3,68 @@ using UnityEngine.SceneManagement;
 
 public class EndGameTrigger : MonoBehaviour
 {
-    [Header("Assign GameObjects")]
-    public GameObject kangaroo;
-    public GameObject bird;
+    public Transform[] agents; // Assign both (or more) agents here in the Inspector
+    public GameObject endCanvas; // Reference to your end canvas, assign it in the Inspector
+    //public GameObject pauseMenu;
+    public float minX = 40f;
+    public float maxX = 44f;
+    public float minZ = -40f;
+    public float maxZ = -33f;
 
-    private bool isKangarooInTrigger = false;
-    private bool isBirdInTrigger = false;
+    private bool hasTriggered = false;
 
-    private void OnTriggerEnter(Collider other)
+    void Start()
     {
-        // Debugging log to confirm the trigger is detected
-        Debug.Log($"{other.gameObject.name} entered the trigger zone.");
-
-        // Check if the entering object is the kangaroo or the bird
-        if (other.gameObject == kangaroo)
+        // Make sure the end canvas is initially invisible (inactive)
+        if (endCanvas != null)
         {
-            isKangarooInTrigger = true;
-            Debug.Log("Kangaroo entered the trigger zone.");
+            endCanvas.SetActive(false); // Ensure the canvas is not visible at the start
         }
-        else if (other.gameObject == bird)
+        else
         {
-            isBirdInTrigger = true;
-            Debug.Log("Bird entered the trigger zone.");
-        }
-
-        // If both the kangaroo and bird are in the trigger zone, load the end scene
-        if (isKangarooInTrigger && isBirdInTrigger)
-        {
-            Debug.Log("Both animals are in the trigger zone. Loading end scene.");
-            LoadEndScene();
+            Debug.LogWarning("End Canvas is not assigned!");
         }
     }
 
-    private void OnTriggerExit(Collider other)
+    void Update()
     {
-        // Debugging log to confirm when the animals exit the trigger zone
-        Debug.Log($"{other.gameObject.name} exited the trigger zone.");
+        if (hasTriggered) return;
 
-        // If either object leaves the trigger zone, reset the state
-        if (other.gameObject == kangaroo)
+        // Check all agents
+        foreach (Transform agent in agents)
         {
-            isKangarooInTrigger = false;
-            Debug.Log("Kangaroo left the trigger zone.");
+            float x = agent.position.x;
+            float z = agent.position.z;
+            //Debug.Log(x);
+            //Debug.Log(z);
+            // If any one of them is *not* inside the zone, break early
+            if (!(x >= minX && x <= maxX && z >= minZ && z <= maxZ))
+            {
+                return; // At least one agent is outside, so we wait
+            }
+            else
+            {
+                // If we get here, all agents are inside the zone
+                hasTriggered = true;
+                Debug.Log("All agents are inside the target zone. Ending game...");
+                TriggerEndGame();
+            }
         }
-        else if (other.gameObject == bird)
-        {
-            isBirdInTrigger = false;
-            Debug.Log("Bird left the trigger zone.");
-        }
+
+        // If we get here, all agents are inside the zone
+        //hasTriggered = true;
+       // Debug.Log("All agents are inside the target zone. Ending game...");
+        //TriggerEndGame();
     }
 
-    private void LoadEndScene()
+    void TriggerEndGame()
     {
-        // Ensure the scene index is correct, here '2' is just an example
-        Debug.Log("Loading end scene...");
-        SceneManager.LoadScene(2);
+        // Your end-of-game logic here
+        Debug.Log("Game Over!");
+
+        // Ensure the end canvas is assigned and set it active (show it)
+        endCanvas.SetActive(true); // Make the end canvas visible
+        Time.timeScale = 0f;
+        //SceneManager.LoadSceneAsync(1);
     }
 }
